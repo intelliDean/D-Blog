@@ -1,4 +1,4 @@
-package com.api.dblog.data.dtos;
+package com.api.dblog.data.dtos.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,9 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostDto {
-    private Long id;
+public class CreatePostRequest {
     private String title;
     private String postContent;
-    private LocalDateTime localDateTime;
 }
