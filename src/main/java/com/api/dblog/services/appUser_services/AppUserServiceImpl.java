@@ -70,6 +70,7 @@ public class AppUserServiceImpl implements AppUserService {
         try {
             JsonNode updatedNode = patchUpdate.apply(node);
             AppUser updatedUser = mapper.convertValue(updatedNode, AppUser.class);
+            updatedUser.setAddress(user.getAddress());  //JsonNode makes object null hence I reset the object Address
 
             AppUser savedUser = appUserRepository.save(updatedUser);
             return UpdateResponse.builder()

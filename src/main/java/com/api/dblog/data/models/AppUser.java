@@ -1,5 +1,6 @@
 package com.api.dblog.data.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +30,12 @@ public class AppUser {
     @Transient
     private MultipartFile profilePicture;
     private String registeredAt;
-    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true)
-    private List<Post> post;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.REMOVE)
+    @JoinColumn(name = "appuser_id")
+    private List<Post> posts;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private List<Comment> comments;
+
 }

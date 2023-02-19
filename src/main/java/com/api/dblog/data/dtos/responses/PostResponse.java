@@ -1,10 +1,8 @@
 package com.api.dblog.data.dtos.responses;
 
-import com.api.dblog.data.dtos.entiies_dto.PostDto;
+
+import com.api.dblog.data.models.Post;
 import lombok.*;
-
-
-import java.util.List;
 
 @Setter
 @Getter
@@ -13,5 +11,5 @@ import java.util.List;
 @Builder
 public class PostResponse {
     private String username;
-    private PostDto posts;
+    private Post post;
 }

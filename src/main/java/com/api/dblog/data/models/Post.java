@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
+
 import java.util.List;
 
 @Setter
@@ -19,10 +19,10 @@ public class Post {
     private Long id;
     private String title;
     private String content;
-    private String localDateTime;
-    @OneToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true)
-    private List<Comment> comment;
+    private String createdAt;
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private List<Comment> comments;
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private AppUser appUser;
 }

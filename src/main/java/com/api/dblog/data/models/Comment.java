@@ -16,4 +16,8 @@ public class Comment {
     private String username;
     private String content;
     private String createdAt;
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE})
+    private AppUser appUser;
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE})
+    private Post post;
 }

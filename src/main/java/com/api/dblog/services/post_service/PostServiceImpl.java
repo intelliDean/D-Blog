@@ -8,8 +8,8 @@ import com.api.dblog.data.dtos.responses.UpdateResponse;
 import com.api.dblog.data.exceptions.ServiceException;
 import com.api.dblog.data.models.AppUser;
 import com.api.dblog.data.models.Post;
-import com.api.dblog.data.repositories.AppUserRepository;
 import com.api.dblog.data.repositories.PostRepository;
+import com.api.dblog.services.appUser_services.AppUserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
@@ -30,19 +30,23 @@ import java.util.stream.Collectors;
 @Service
 public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
-    private  final AppUserRepository appUserRepository;
+    private final AppUserService appUserService;
     private final ModelMapper mapper;
 
     @Override
-    public CreateResponse createPost(CreatePostRequest createPostRequest) {
+    public CreateResponse createPost(Long userid, CreatePostRequest createPostRequest) {
+        AppUser user = appUserService.getUserById(userid);
+
         Post post = Post.builder()
                 .title(createPostRequest.getTitle())
-                .content(createPostRequest.getPostContent())
-                .comment(new ArrayList<>())
-                .localDateTime(LocalDateTime.now().toString())
+                .content(createPostRequest.getContent())
+                .comments(new ArrayList<>())
+                .appUser(user)
+                .createdAt(LocalDateTime.now().toString())
                 .build();
 
         Post savedPost = postRepository.save(post);
+
         return CreateResponse.builder()
                 .id(savedPost.getId())
                 .code(HttpStatus.CREATED.value())
@@ -52,43 +56,62 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponse getPost(Long postId) {
-        Post post = postRepository.findById(postId)
+    public Post getPost(Long postId) {
+        return postRepository.findById(postId)
                 .orElseThrow(()->new ServiceException("Post could not be found"));
-
-        return PostResponse.builder()
-                .username(post.getAppUser().getUsername())
-                .posts(mapper.map(post, PostDto.class))
-                .build();
-
-        //this will only return the username of the user with the post
     }
 
     @Override
-    public List<PostDto> getAll() {
-        return postRepository.findAll()
-                .stream()
-                .map(x->mapper.map(x, PostDto.class))
-                .collect(Collectors.toList());
+    public List<Post> getAll() {
+        return postRepository.findAll();
     }
+
+    private PostResponse all(Post post) {
+        return PostResponse.builder()
+                .username(post.getAppUser().getUsername())
+                .post(post)
+                .build();
+    }
+
 
     @Override
     public UpdateResponse updateField(Long postId, JsonPatch patchUpdate) {
         ObjectMapper objectMapper = new ObjectMapper();
-        Post post = mapper.map(getPost(postId), Post.class);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(()->new ServiceException("Post could not be found"));
 
         JsonNode node = objectMapper.convertValue(post, JsonNode.class);
         try {
             JsonNode updatedNode = patchUpdate.apply(node);
             Post updatedPost = objectMapper.convertValue(updatedNode, Post.class);
+            updatedPost.setAppUser(post.getAppUser());
 
+            postRepository.save(updatedPost);
             return UpdateResponse.builder()
                     .code(HttpStatus.OK.value())
-                    .message("Post updated successfully").build();
+                    .message("Post %s updated successfully").build();
         } catch (JsonPatchException ex) {
             log.error(ex.getMessage());
             throw new RuntimeException();
         }
+    }
+
+    @Override
+    public UpdateResponse updatePost(Long postId, PostDto postDto) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(()->new ServiceException("Post could not be found"));
+
+        post.setTitle(postDto.getTitle());
+        post.setContent(postDto.getContent());
+        post.setCreatedAt(LocalDateTime.now().toString());
+
+        postRepository.save(post);
+
+        return UpdateResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message("Post updated successfully")
+                .build();
     }
 
     @Override
@@ -101,7 +124,36 @@ public class PostServiceImpl implements PostService {
     @Override
     public UpdateResponse deleteAll() {
         postRepository.deleteAll();
-        return UpdateResponse.builder().message("All Posts deleted successfully").build();
+        return UpdateResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message("All Posts deleted successfully").build();
     }
+
+    @Override
+    public PostResponse getPostByUserId(Long userId, Long postId) {
+        Post post = postRepository.findPostByIdAndAppUser_Id(postId, userId);
+        return PostResponse.builder()
+                .username(post.getAppUser().getUsername())
+                .post(post)
+                .build();
+    }
+
+    @Override
+    public UpdateResponse deletePostByUserId(Long userId) {
+        postRepository.deleteAllByAppUser_Id(userId);
+
+        return UpdateResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message("Deleted Successfully")
+                .build();
+    }
+
+    public List<PostResponse> findAllUserPosts(Long userId) {
+        return postRepository.findAllByAppUser_Id(userId)
+                .stream()
+                .map(this :: all)
+                .collect(Collectors.toList());
+    }
+
 
 }

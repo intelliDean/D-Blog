@@ -7,6 +7,6 @@ import com.api.dblog.data.dtos.responses.CreateResponse;
 import java.util.List;
 
 public interface CommentService {
-    CreateResponse createComment(CommentRequest commentRequest);
+    CreateResponse createComment(Long userid, Long postId, CommentRequest commentRequest);
     CommentDto getComment(Long commentId);
 }
